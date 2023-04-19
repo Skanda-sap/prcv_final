@@ -1,0 +1,3 @@
+/home/sid/Documents/prcv projects/tocr/CMakeFiles/rebuild_cache.dir
+/home/sid/Documents/prcv projects/tocr/CMakeFiles/edit_cache.dir
+/home/sid/Documents/prcv projects/tocr/CMakeFiles/ocr.dir
