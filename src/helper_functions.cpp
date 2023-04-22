@@ -12,6 +12,10 @@ Final Project: Autonomous Lane and Number plate detection using classic Computer
 #include <set>
 #include <dirent.h>
 
+#include <tesseract/baseapi.h>
+#include <leptonica/allheaders.h>
+#include <string>
+
 
 // Converts char[] to std::string
 std::string char_to_String(char* a)
@@ -51,15 +55,23 @@ void draw_label(cv::Mat& input_image, std::string label, int left, int top)
     // Display the label at the top of the bounding box.
     int baseLine;
     cv::Size label_size = cv::getTextSize(label, FONT_FACE, FONT_SCALE, THICKNESS, &baseLine);
+    std::cout << "Baseline: " << baseLine << std::endl;
     top = std::max(top, label_size.height);
     // Top left corner.
-    cv::Point tlc = cv::Point(left, top);
+    // Point tlc = Point(left, top);
+    cv::Point tlc = cv::Point(left, top - baseLine);
     // Bottom right corner.
-    cv::Point brc = cv::Point(left + label_size.width, top + label_size.height + baseLine);
-    // Draw white rectangle.
-    cv::rectangle(input_image, tlc, brc, BLACK, cv::LineTypes::FILLED);
+    // Point brc = Point(left + label_size.width, top + label_size.height + baseLine);
+    cv::Point brc = cv::Point(left + label_size.width, top - label_size.height - 2*baseLine);
+    // Draw black rectangle.
+
+    // Compute the position of the text within the bounding box
+    cv::Point textPosition(left, top - label_size.height);
+
+    cv::rectangle(input_image, tlc, brc, BLACK, cv::FILLED);
     // Put the label on the black rectangle.
-    cv::putText(input_image, label, cv::Point(left, top + label_size.height), FONT_FACE, FONT_SCALE, YELLOW, THICKNESS);
+    // putText(input_image, label, Point(left, top + label_size.height), FONT_FACE, FONT_SCALE, YELLOW, THICKNESS);
+    cv::putText(input_image, label, textPosition, FONT_FACE, FONT_SCALE, YELLOW, THICKNESS);
 }
 
 std::vector<cv::Mat> pre_process(cv::Mat &input_image, cv::dnn::Net &net)
@@ -77,17 +89,21 @@ std::vector<cv::Mat> pre_process(cv::Mat &input_image, cv::dnn::Net &net)
     return outputs;
 }
 
-cv::Mat post_process(cv::Mat &input_image, std::vector<cv::Mat> &outputs, const std::vector<std::string> &class_name)
+cv::Mat post_process(cv::Mat &input_image, std::vector<cv::Mat> &outputs, const std::vector<std::string> &class_name, std::vector<cv::Rect> &boxes_NMS, std::vector<std::string> &labels_NMS)
 {
     // Initialize vectors to hold respective outputs while unwrapping     detections.
     std::vector<int> class_ids;
     std::vector<float> confidences;
     std::vector<cv::Rect> boxes;
+    
+    
+
     // Resizing factor.
     float x_factor = input_image.cols / INPUT_WIDTH;
     float y_factor = input_image.rows / INPUT_HEIGHT;
     float *data = (float *)outputs[0].data;
-    const int dimensions = 85;
+    // const int dimensions = 85;
+    const int dimensions = nc + 5;
     // 25200 for default size 640.
     const int rows = 25200;
     // Iterate through 25200 detections.
@@ -126,7 +142,8 @@ cv::Mat post_process(cv::Mat &input_image, std::vector<cv::Mat> &outputs, const 
             }
         }
         // Jump to the next row.
-        data += 85;
+        // data += 85;
+        data += nc + 5;
     }
     // Perform Non-Maximum Suppression and draw predictions.
     std::vector<int> indices;
@@ -140,15 +157,37 @@ cv::Mat post_process(cv::Mat &input_image, std::vector<cv::Mat> &outputs, const 
         int width = box.width;
         int height = box.height;
         // Draw bounding box.
-        cv::rectangle(input_image, cv::Point(left, top), cv::Point(left + width, top + height), BLUE, 3*THICKNESS);
+        // cv::rectangle(input_image, cv::Point(left, top), cv::Point(left + width, top + height), BLUE, 3*THICKNESS);
         // Get the label for the class name and its confidence.
         // std::string label = format("%.2f", confidences[idx]);
         std::string label = std::to_string(confidences[idx]);
         label = class_name[class_ids[idx]] + ":" + label;
+        boxes_NMS.push_back(box);
+        labels_NMS.push_back(label);
+
         // Draw class labels.
-        draw_label(input_image, label, left, top);
+        // draw_label(input_image, label, left, top);
     }
     return input_image;
+}
+
+
+
+int ocrTOtext(cv::Mat& im, std::string& outText){
+    tesseract::TessBaseAPI *ocr = new tesseract::TessBaseAPI();
+    //This line initializes the Tesseract OCR engine with the English language and LSTM OCR engine mode.
+    ocr->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
+    //This line sets the page segmentation mode of the Tesseract OCR engine to automatic.
+    ocr->SetPageSegMode(tesseract::PSM_AUTO);
+    //It uses the SetImage() function of the TessBaseAPI class and passes the image data, width, height, number of channels, and step size of the image.
+    ocr->SetImage(im.data, im.cols, im.rows, 3, im.step);
+    // ocr->SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+    //runs the OCR on the image using the GetUTF8Text() function of the TessBaseAPI class and assigns the recognized text to the outText string variable.
+    outText = std::string(ocr->GetUTF8Text());
+    std::cout <<"detected: "<< outText;
+    ocr->End();
+    return(0);
+
 }
 
 

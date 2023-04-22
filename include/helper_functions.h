@@ -13,6 +13,8 @@ extern cv::Size patternsize; //interior number of corners
 extern int res_width; //columns
 extern int res_height; //rows
 
+extern int nc; // number of classes
+
 extern const float INPUT_WIDTH;
 extern const float INPUT_HEIGHT;
 extern const float SCORE_THRESHOLD; // To filter low probability class scores.
@@ -36,6 +38,8 @@ void draw_label(cv::Mat& input_image, std::string label, int left, int top);
 
 std::vector<cv::Mat> pre_process(cv::Mat &input_image, cv::dnn::Net &net);
 
-cv::Mat post_process(cv::Mat &input_image, std::vector<cv::Mat> &outputs, const std::vector<std::string> &class_name);
+cv::Mat post_process(cv::Mat &input_image, std::vector<cv::Mat> &outputs, const std::vector<std::string> &class_name, std::vector<cv::Rect> &boxes_NMS, std::vector<std::string> &labels_NMS);
+
+int ocrTOtext(cv::Mat& im, std::string& outText);
 
 #endif

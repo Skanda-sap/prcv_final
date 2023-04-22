@@ -425,7 +425,48 @@ CMakeFiles/prcv_final_project.dir/src/helper_functions.cpp.o: src/helper_functio
   include/filter.h \
   /usr/include/dirent.h \
   /usr/include/x86_64-linux-gnu/bits/dirent.h \
-  /usr/include/x86_64-linux-gnu/bits/dirent_ext.h
+  /usr/include/x86_64-linux-gnu/bits/dirent_ext.h \
+  /usr/include/tesseract/baseapi.h \
+  /usr/include/tesseract/apitypes.h \
+  /usr/include/tesseract/publictypes.h \
+  /usr/include/tesseract/pageiterator.h \
+  /usr/include/tesseract/platform.h \
+  /usr/include/tesseract/resultiterator.h \
+  /usr/include/tesseract/ltrresultiterator.h \
+  /usr/include/tesseract/unichar.h \
+  /usr/include/memory.h \
+  /usr/include/tesseract/serialis.h \
+  /usr/include/tesseract/tess_version.h \
+  /usr/include/tesseract/tesscallback.h \
+  /usr/include/tesseract/thresholder.h \
+  /usr/include/leptonica/allheaders.h \
+  /usr/include/leptonica/alltypes.h \
+  /usr/include/leptonica/endianness.h \
+  /usr/include/leptonica/environ.h \
+  /usr/include/leptonica/array.h \
+  /usr/include/leptonica/bbuffer.h \
+  /usr/include/leptonica/hashmap.h \
+  /usr/include/leptonica/heap.h \
+  /usr/include/leptonica/list.h \
+  /usr/include/leptonica/ptra.h \
+  /usr/include/leptonica/queue.h \
+  /usr/include/leptonica/rbtree.h \
+  /usr/include/leptonica/stack.h \
+  /usr/include/leptonica/arrayaccess.h \
+  /usr/include/leptonica/bmf.h \
+  /usr/include/leptonica/ccbord.h \
+  /usr/include/leptonica/colorfill.h \
+  /usr/include/leptonica/dewarp.h \
+  /usr/include/leptonica/gplot.h \
+  /usr/include/leptonica/imageio.h \
+  /usr/include/leptonica/jbclass.h \
+  /usr/include/leptonica/morph.h \
+  /usr/include/leptonica/pix.h \
+  /usr/include/leptonica/recog.h \
+  /usr/include/leptonica/regutils.h \
+  /usr/include/leptonica/stringcode.h \
+  /usr/include/leptonica/sudoku.h \
+  /usr/include/leptonica/watershed.h
 
 CMakeFiles/prcv_final_project.dir/src/yolo_v5.cpp.o: src/yolo_v5.cpp \
   /usr/include/stdc-predef.h \
@@ -861,9 +902,55 @@ CMakeFiles/prcv_final_project.dir/src/yolo_v5.cpp.o: src/yolo_v5.cpp \
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/basic_file.h:
 
+src/yolo_v5.cpp:
+
+/usr/include/leptonica/imageio.h:
+
+/usr/include/leptonica/gplot.h:
+
+/usr/include/leptonica/sudoku.h:
+
+/usr/include/leptonica/ccbord.h:
+
+/usr/include/leptonica/bmf.h:
+
+/usr/include/leptonica/arrayaccess.h:
+
+/usr/include/leptonica/stack.h:
+
+/usr/include/leptonica/rbtree.h:
+
+/usr/include/leptonica/heap.h:
+
+/usr/include/leptonica/bbuffer.h:
+
+/usr/include/leptonica/array.h:
+
+/usr/include/leptonica/environ.h:
+
+/usr/include/leptonica/alltypes.h:
+
+/usr/include/tesseract/thresholder.h:
+
 include/modes.h:
 
-src/yolo_v5.cpp:
+/usr/include/tesseract/tesscallback.h:
+
+/usr/include/tesseract/tess_version.h:
+
+/usr/include/tesseract/serialis.h:
+
+/usr/include/memory.h:
+
+/usr/include/tesseract/unichar.h:
+
+/usr/include/tesseract/ltrresultiterator.h:
+
+/usr/include/tesseract/publictypes.h:
+
+/usr/include/tesseract/apitypes.h:
+
+/usr/include/tesseract/baseapi.h:
 
 /usr/include/x86_64-linux-gnu/bits/dirent.h:
 
@@ -955,6 +1042,8 @@ include/helper_functions.h:
 
 /usr/include/opencv4/opencv2/flann/heap.h:
 
+/usr/include/tesseract/platform.h:
+
 /usr/include/opencv4/opencv2/flann/kdtree_index.h:
 
 /usr/include/opencv4/opencv2/flann/all_indices.h:
@@ -1005,6 +1094,8 @@ include/helper_functions.h:
 
 /usr/include/c++/11/bits/parse_numbers.h:
 
+/usr/include/leptonica/endianness.h:
+
 /usr/include/c++/11/ctime:
 
 /usr/include/c++/11/ratio:
@@ -1018,6 +1109,8 @@ include/helper_functions.h:
 /usr/include/c++/11/bits/stl_set.h:
 
 /usr/include/c++/11/bits/locale_facets.tcc:
+
+/usr/include/leptonica/recog.h:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/ctype_inline.h:
 
@@ -1035,17 +1128,23 @@ include/helper_functions.h:
 
 /usr/include/c++/11/bits/basic_ios.h:
 
+/usr/include/leptonica/hashmap.h:
+
 /usr/include/c++/11/bits/streambuf.tcc:
 
 /usr/include/opencv4/opencv2/imgcodecs.hpp:
 
 /usr/include/c++/11/stdexcept:
 
+/usr/include/tesseract/resultiterator.h:
+
 /usr/include/x86_64-linux-gnu/c++/11/bits/error_constants.h:
 
 /usr/include/opencv4/opencv2/flann/lsh_table.h:
 
 /usr/include/c++/11/bits/locale_classes.tcc:
+
+/usr/include/leptonica/allheaders.h:
 
 /usr/include/c++/11/bits/ios_base.h:
 
@@ -1071,6 +1170,8 @@ include/helper_functions.h:
 
 /usr/include/c++/11/cfloat:
 
+/usr/include/leptonica/morph.h:
+
 /usr/include/opencv4/opencv2/core/types.hpp:
 
 /usr/include/opencv4/opencv2/core/fast_math.hpp:
@@ -1080,6 +1181,8 @@ include/helper_functions.h:
 /usr/include/c++/11/bits/stl_construct.h:
 
 /usr/include/c++/11/bits/stl_tempbuf.h:
+
+/usr/include/leptonica/pix.h:
 
 /usr/include/opencv4/opencv2/flann/sampling.h:
 
@@ -1102,6 +1205,8 @@ include/helper_functions.h:
 /usr/include/x86_64-linux-gnu/bits/posix1_lim.h:
 
 /usr/include/asm-generic/errno-base.h:
+
+/usr/include/leptonica/jbclass.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/syslimits.h:
 
@@ -1169,6 +1274,8 @@ include/helper_functions.h:
 
 /usr/include/x86_64-linux-gnu/bits/time64.h:
 
+/usr/include/leptonica/list.h:
+
 /usr/include/x86_64-linux-gnu/bits/sched.h:
 
 /usr/include/c++/11/algorithm:
@@ -1217,6 +1324,8 @@ include/helper_functions.h:
 
 /usr/include/c++/11/tr1/special_function_util.h:
 
+/usr/include/leptonica/queue.h:
+
 /usr/include/stdint.h:
 
 /usr/include/opencv4/opencv2/core.hpp:
@@ -1255,7 +1364,11 @@ include/helper_functions.h:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/cpu_defines.h:
 
+/usr/include/leptonica/watershed.h:
+
 /usr/include/opencv4/opencv2/core/neon_utils.hpp:
+
+/usr/include/leptonica/colorfill.h:
 
 /usr/include/x86_64-linux-gnu/gnu/stubs.h:
 
@@ -1344,6 +1457,8 @@ src/helper_functions.cpp:
 /usr/include/x86_64-linux-gnu/bits/dirent_ext.h:
 
 /usr/include/x86_64-linux-gnu/bits/types.h:
+
+/usr/include/tesseract/pageiterator.h:
 
 /usr/include/x86_64-linux-gnu/bits/timex.h:
 
@@ -1477,7 +1592,11 @@ include/filter.h:
 
 /usr/include/c++/11/bits/vector.tcc:
 
+/usr/include/leptonica/dewarp.h:
+
 /usr/include/c++/11/bits/stl_bvector.h:
+
+/usr/include/leptonica/regutils.h:
 
 /usr/include/x86_64-linux-gnu/bits/long-double.h:
 
@@ -1605,6 +1724,8 @@ include/filter.h:
 
 /usr/include/c++/11/bits/string_view.tcc:
 
+/usr/include/leptonica/stringcode.h:
+
 /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
 
 /usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
@@ -1664,6 +1785,8 @@ include/filter.h:
 /usr/include/c++/11/bits/charconv.h:
 
 /usr/include/c++/11/tr1/legendre_function.tcc:
+
+/usr/include/leptonica/ptra.h:
 
 /usr/include/c++/11/ext/new_allocator.h:
 

@@ -1,11 +1,20 @@
 cmake_minimum_required(VERSION 3.5) 
 PROJECT (my_opencv_package)
+
 find_package(OpenCV REQUIRED )
 if (${OpenCV_FOUND})
   message("[MY_MESSAGE] OpenCV version: ${OpenCV_VERSION} found from the path: ${OpenCV_INCLUDE_DIRS}")
   else()
   message(FATAL_ERROR "OpenCV not found!")
 endif()
+
+find_package(PkgConfig REQUIRED)
+pkg_search_module(TESSERACT REQUIRED tesseract)
+pkg_search_module(LEPTONICA REQUIRED lept)
+include_directories(${TESSERACT_INCLUDE_DIRS})
+include_directories(${LEPTONICA_INCLUDE_DIRS})
+link_directories( ${TESSERACT_LIBRARY_DIRS} )
+link_directories( ${LEPTONICA_LIBRARY_DIRS} )
 
 set( SRC_FILES_PATH_YOLO src/yolo_v5.cpp  src/helper_functions.cpp)
 
@@ -27,7 +36,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 set(prcv_final_project prcv_final_project)
 add_executable( ${prcv_final_project} ${SRC_FILES_PATH_YOLO} )
-target_link_libraries( ${prcv_final_project} ${OpenCV_LIBS} )
+target_link_libraries( ${prcv_final_project} ${OpenCV_LIBS} tesseract lept ${Tesseract_LIBRARIES} ${Leptonica_LIBRARIES} )
 
 
 

@@ -40,26 +40,76 @@ cv::Scalar BLUE = cv::Scalar(255, 178, 50);
 cv::Scalar YELLOW = cv::Scalar(0, 255, 255);
 cv::Scalar RED = cv::Scalar(0,0,255);
 
+int nc;
+
 int main()
 {
     // Load class list.
     std::vector<std::string> class_list;
-    std::ifstream ifs("coco.names");
+    // std::ifstream ifs("../models/coco.names");
+    std::ifstream ifs("../models/number_plate.names");
+    if (!ifs) {
+      std::cerr << "Class names file not found! Please check the path relative to the pwd" << std::endl;
+      return -1;
+    }
+
+    
     std::string line;
+    
+    
     while (getline(ifs, line))
     {
         class_list.push_back(line);
     }
+    nc = class_list.size();
+    std::cout << "Number of classes: " << nc << std::endl;
     // Load image.
     cv::Mat frame;
-    frame = cv::imread("traffic.jpg");
+    // frame = cv::imread("sample.jpg");
+    frame = cv::imread("MicrosoftTeams-image.png");
     // Load model.
     cv::dnn::Net net;
-    net = cv::dnn::readNet("YOLOv5s.onnx");
+    try {
+        // net = cv::dnn::readNet("../models/yolov5s.onnx");
+        net = cv::dnn::readNet("../models/best_include_torchscript.onnx");
+    }
+    catch (const cv::Exception& e) {
+        std::cerr << "OpenCV error: " << e.what() << std::endl;
+        std::cerr << "Please check the path relative to the pwd" << std::endl;
+
+        // Handle the error
+        // ...
+        return -1;
+    }
+
     std::vector<cv::Mat> detections;     // Process the image.
     detections = pre_process(frame, net);
     cv::Mat frame_cloned = frame.clone();
-    cv::Mat img = post_process(frame_cloned, detections, class_list);
+    std::vector<cv::Rect> boxes_NMS;
+    std::vector<std::string> labels_NMS;
+    
+    cv::Mat img = post_process(frame_cloned, detections, class_list, boxes_NMS, labels_NMS);
+    for (int i = 0; i < boxes_NMS.size(); i++)
+    {
+        // Draw bounding box.
+        cv::rectangle(img, cv::Point(boxes_NMS[i].x, boxes_NMS[i].y), cv::Point(boxes_NMS[i].x + boxes_NMS[i].width, boxes_NMS[i].y + boxes_NMS[i].height), BLUE, 3*THICKNESS);
+        // Draw class labels.
+        draw_label(img, labels_NMS[i], boxes_NMS[i].x, boxes_NMS[i].y);
+        
+        // Feed the bounding box information to tesseract to do OCR
+        cv::Mat plate_img = frame(cv::Range(boxes_NMS[i].y,boxes_NMS[i].y + boxes_NMS[i].height), cv::Range(boxes_NMS[i].x,boxes_NMS[i].width));
+        std::string ocr_text;
+        std::cout << "Performing OCR" << std::endl;
+        ocrTOtext(plate_img,ocr_text);
+        std::cout << "Detected text is: " << ocr_text << std::endl;
+    }
+
+    
+    
+    
+
+
+
     // Put efficiency information.
     // The function getPerfProfile returns the overall time for     inference(t) and the timings for each of the layers(in layersTimes).
     std::vector<double> layersTimes;
