@@ -95,11 +95,28 @@ int main()
         cv::rectangle(img, cv::Point(boxes_NMS[i].x, boxes_NMS[i].y), cv::Point(boxes_NMS[i].x + boxes_NMS[i].width, boxes_NMS[i].y + boxes_NMS[i].height), BLUE, 3*THICKNESS);
         // Draw class labels.
         draw_label(img, labels_NMS[i], boxes_NMS[i].x, boxes_NMS[i].y);
+        std::cout << "x: " <<  boxes_NMS[i].x << std::endl;
+        std::cout << "y: " <<  boxes_NMS[i].y << std::endl;
+        std::cout << "width: " <<  boxes_NMS[i].width << std::endl;
+        std::cout << "height: " <<  boxes_NMS[i].height << std::endl;
+        std::cout << "Frame size: " << frame.size << std::endl;
+        std::cout << "y range " << boxes_NMS[i].y + boxes_NMS[i].height << std::endl;
+        std::cout << "x range " << boxes_NMS[i].x + boxes_NMS[i].width << std::endl;
+
+
+
+        // cv::Mat plate_img = frame(cv::Range(100 , 150), cv::Range(200,300));
         
         // Feed the bounding box information to tesseract to do OCR
-        cv::Mat plate_img = frame(cv::Range(boxes_NMS[i].y,boxes_NMS[i].y + boxes_NMS[i].height), cv::Range(boxes_NMS[i].x,boxes_NMS[i].width));
-        std::string ocr_text;
+        cv::Rect roi(boxes_NMS[i].x, boxes_NMS[i].y, boxes_NMS[i].width, boxes_NMS[i].height);
+        cv::Mat plate_img = frame(roi);
+        cv::imshow("plate img", plate_img);
+        cv::waitKey(0);
         std::cout << "Performing OCR" << std::endl;
+        std::string ocr_text;
+        
+        cv::Mat test_img = cv::imread("ma.png");
+        
         ocrTOtext(plate_img,ocr_text);
         std::cout << "Detected text is: " << ocr_text << std::endl;
     }
@@ -118,7 +135,7 @@ int main()
     std::string label = cv::format("Inference time : %.2f ms", t);
     // std::string label = "Inference time";
     cv::putText(img, label, cv::Point(20, 40), FONT_FACE, FONT_SCALE, RED);
-    imshow("Output", img);
+    cv::imshow("Output", img);
     cv::waitKey(0);
     return 0;
 }
