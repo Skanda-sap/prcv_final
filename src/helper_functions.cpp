@@ -173,21 +173,46 @@ cv::Mat post_process(cv::Mat &input_image, std::vector<cv::Mat> &outputs, const 
 
 
 
-int ocrTOtext(cv::Mat& im, std::string& outText){
+int ocrTOtext(cv::Mat& otsu, std::string& outText){
+    // // Combine the edge and thresholded images
     tesseract::TessBaseAPI *ocr = new tesseract::TessBaseAPI();
     //This line initializes the Tesseract OCR engine with the English language and LSTM OCR engine mode.
     ocr->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
     //This line sets the page segmentation mode of the Tesseract OCR engine to automatic.
-    ocr->SetPageSegMode(tesseract::PSM_AUTO);
+    ocr->SetPageSegMode(tesseract::PSM_SINGLE_LINE);
     //It uses the SetImage() function of the TessBaseAPI class and passes the image data, width, height, number of channels, and step size of the image.
-    ocr->SetImage(im.data, im.cols, im.rows, 3, im.step);
+    ocr->SetImage(otsu.data, otsu.cols, otsu.rows, 3, otsu.step);
+    ocr->SetSourceResolution(70);
     // ocr->SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
     //runs the OCR on the image using the GetUTF8Text() function of the TessBaseAPI class and assigns the recognized text to the outText string variable.
     outText = std::string(ocr->GetUTF8Text());
-    std::cout <<"detected: "<< outText;
+    // std::cout <<"detected: "<< outText;
+    cv:: imshow("Otsu", otsu);
     ocr->End();
     return(0);
 
 }
 
+void illuminationCorrection(cv::Mat& image) {
+    cv::Mat lab_image;
+    cv::cvtColor(image, lab_image, cv::COLOR_BGR2Lab);
 
+    // Split the LAB image into its 3 channels
+    std::vector<cv::Mat> lab_planes(3);
+    cv::split(lab_image, lab_planes);
+
+    // Apply CLAHE algorithm to the L channel
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+    clahe->setClipLimit(4);
+    clahe->apply(lab_planes[0], lab_planes[0]);
+
+    // Merge the processed LAB channels
+    cv::merge(lab_planes, lab_image);
+
+    // Convert the LAB image back to BGR color space
+    cv::Mat corrected_image;
+    cv::cvtColor(lab_image, corrected_image, cv::COLOR_Lab2BGR);
+
+    // Replace the original image with the corrected one
+    image = corrected_image;
+}

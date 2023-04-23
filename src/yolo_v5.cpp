@@ -42,6 +42,9 @@ cv::Scalar RED = cv::Scalar(0,0,255);
 
 int nc;
 
+
+
+
 int main()
 {
     // Load class list.
@@ -66,7 +69,9 @@ int main()
     // Load image.
     cv::Mat frame;
     // frame = cv::imread("sample.jpg");
-    frame = cv::imread("MicrosoftTeams-image.png");
+    // frame = cv::imread("MicrosoftTeams-image.png");
+    frame = cv::imread("twocar.jpg");
+
     // Load model.
     cv::dnn::Net net;
     try {
@@ -111,22 +116,27 @@ int main()
         cv::Rect roi(boxes_NMS[i].x, boxes_NMS[i].y, boxes_NMS[i].width, boxes_NMS[i].height);
         cv::Mat plate_img = frame(roi);
         cv::imshow("plate img", plate_img);
-        cv::waitKey(0);
+        // cv::waitKey(0);
         std::cout << "Performing OCR" << std::endl;
         std::string ocr_text;
         
         cv::Mat test_img = cv::imread("ma.png");
-        
+        cv::Size img_size = test_img.size();
+
+        // Print image width and height
+        std::cout << "Image width: " << img_size.width << std::endl;
+        std::cout << "Image height: " << img_size.height << std::endl;
+
+        cv::Mat gray;
+        cv::Size size(1656, 842);
         ocrTOtext(plate_img,ocr_text);
+        // cv::imshow("Original Image", img);
+        // cv::imshow("Processed Image", thresh);
         std::cout << "Detected text is: " << ocr_text << std::endl;
     }
 
     
     
-    
-
-
-
     // Put efficiency information.
     // The function getPerfProfile returns the overall time for     inference(t) and the timings for each of the layers(in layersTimes).
     std::vector<double> layersTimes;
