@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5) 
 PROJECT (my_opencv_package)
 
+# if(CMAKE_COMPILER_IS_GNUCC)
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
+# endif()
+
 find_package(OpenCV REQUIRED )
 if (${OpenCV_FOUND})
   message("[MY_MESSAGE] OpenCV version: ${OpenCV_VERSION} found from the path: ${OpenCV_INCLUDE_DIRS}")

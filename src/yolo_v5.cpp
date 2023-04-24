@@ -6,7 +6,6 @@ Final Project: Autonomous Lane and Number plate detection using classic Computer
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <unistd.h> // To use sleep functionality
-#include <filter.h>
 #include <helper_functions.h>
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
@@ -14,8 +13,6 @@ Final Project: Autonomous Lane and Number plate detection using classic Computer
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
-#include <dirent.h>
-#include <modes.h>
 #include <fstream>
 
 
@@ -40,112 +37,199 @@ cv::Scalar BLUE = cv::Scalar(255, 178, 50);
 cv::Scalar YELLOW = cv::Scalar(0, 255, 255);
 cv::Scalar RED = cv::Scalar(0,0,255);
 
-int nc;
+int camera_ID = 1; // Camera ID for the webcam
 
+// Resolution required for the window
+int res_width = 600; //columns
+int res_height = res_width*9/16; //rows
 
-
-
-int main()
+// Main function which captures frames from the image/ video (provided as input argument to CLI)/ live feed (no argument)
+int main(int argc, char** argv)
 {
+    //Source: 0 :image | 1 : video from file | 2 : live video from webcam
+    
+    char target_filename[256];
+    char *target_filename_char_star;
+    int source = 0; //0 :image | 1 : video from file | 2 : live video from webcam
+
+    cv::Mat lane_detected; // Matrix which stores the detected output
+
+    // If CLI argument is provided, extract image/ video file name from this
+    if( argc == 2) {
+        strcpy(target_filename, argv[1] );
+        target_filename_char_star = target_filename;
+        std::cout << "Reading image/ video from directory" << std::endl;
+        source = 0; //It could be 0 (image) or 1 (video)
+    }else{
+        source = 2; // Live feed
+    }
+
+    cv::Mat frame; // Matrix which stores the frame to process
+    cv::VideoCapture *capdev; // Capture device to read the image(s)
+    int fps; // Stores fps at which the video was recorded/ is being streamed
+
+    int window_id = 1; // Used as part of a label to display the output
+    
+    cv::String window_original_image = std::to_string(window_id) + " :Original image";
+    cv::namedWindow(window_original_image);
+    window_id++;
+
+    cv::String window_lanes_detected = std::to_string(window_id) + " :Lanes detected";
+    cv::namedWindow(window_lanes_detected);
+    window_id++;
+
+    
+    // Decide if input source is image or video file by calculating total number of frames in input
+    if(source == 0){
+        // Check if the input is image or video file by counting the number of frames in the input
+        
+        capdev = new cv::VideoCapture(target_filename_char_star); 
+        // Print error message if the stream is invalid
+        if (!capdev->isOpened()){
+            std::cout << "Error opening video stream or image file" << std::endl;
+        }else{
+            // Obtain fps and frame count by get() method and print
+            // You can replace 5 with CAP_PROP_FPS as well, they are enumerations
+            fps = capdev->get(5);
+            std::cout << "Frames per second in video:" << fps << std::endl;
+        
+            // Obtain frame_count using opencv built in frame count reading method
+            // You can replace 7 with CAP_PROP_FRAME_COUNT as well, they are enumerations
+            int frame_count = capdev->get(7);
+            
+            // PNG photos return negative frame_count. This check handles this
+            if (frame_count < 0){
+                frame_count = 1;
+            }
+            std::cout << "  Frame count :" << frame_count << std::endl;
+
+            (frame_count == 1) ? source = 0 : source = 1;
+            std::cout << "Source is: " << source << std::endl;
+        }
+
+        if (source == 0){
+            // Read the image file
+            frame = cv::imread(target_filename_char_star,cv::ImreadModes::IMREAD_COLOR);
+            std::cout << "Reading image from disk successful. Number of channels in image: " << frame.channels() << std::endl;
+            
+            // Check for failure
+            if (frame.empty()) {
+                std::cout << "Could not open or find the image" << std::endl;
+                // std::cin.get(); //wait for any key press
+                return -1;
+            }
+        }
+    }
+
+    // Source is live video
+    if (source == 2){
+        capdev = new cv::VideoCapture(camera_ID);
+        
+        if (!capdev->isOpened()) {
+            throw std::runtime_error("Error");
+            return -1;
+        }
+        fps = capdev->get(5);
+        std::cout << "Input feed is camera" << std::endl;
+        // get some properties of the image
+        cv::Size refS( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
+                    (int) capdev->get(cv::CAP_PROP_FRAME_HEIGHT));
+        printf("Image size(WidthxHeight) from camera: %dx%d\n", refS.width, refS.height);
+    }
+
+
+    // LOAD THE OBJECT DETECTION MODEL: YOLOV5
+
     // Load class list.
-    std::vector<std::string> class_list;
-    // std::ifstream ifs("../models/coco.names");
-    std::ifstream ifs("../models/number_plate.names");
-    if (!ifs) {
+    std::vector<std::string> class_list_1; // Stores 80 classes of yolov5s
+    std::vector<std::string> class_list_2; // Stores one class of custom trained model, number plate
+    std::ifstream ifs_1("../models/coco.names");
+    std::ifstream ifs_2("../models/number_plate.names");
+    if (!ifs_1 || !ifs_2) {
       std::cerr << "Class names file not found! Please check the path relative to the pwd" << std::endl;
       return -1;
+    }    
+    std::string line;
+
+    while (getline(ifs_1, line)){
+        class_list_1.push_back(line);
     }
 
-    
-    std::string line;
-    
-    
-    while (getline(ifs, line))
-    {
-        class_list.push_back(line);
+    while (getline(ifs_2, line)){
+        class_list_2.push_back(line);
     }
-    nc = class_list.size();
-    std::cout << "Number of classes: " << nc << std::endl;
-    // Load image.
-    cv::Mat frame;
-    // frame = cv::imread("sample.jpg");
-    // frame = cv::imread("MicrosoftTeams-image.png");
-    frame = cv::imread("twocar.jpg");
+
+    int nc_1 = class_list_1.size(); // Number of classes for first model
+    int nc_2 = class_list_2.size(); // Number of classes for second model
+    std::cout << "Number of classes: " << nc_1 << " | " << nc_2 << std::endl;
 
     // Load model.
-    cv::dnn::Net net;
+    cv::dnn::Net net_1;
+    cv::dnn::Net net_2;
     try {
-        // net = cv::dnn::readNet("../models/yolov5s.onnx");
-        net = cv::dnn::readNet("../models/best_include_torchscript.onnx");
+        net_1 = cv::dnn::readNet("../models/yolov5s.onnx");
+        net_2 = cv::dnn::readNet("../models/best_include_torchscript.onnx");
     }
     catch (const cv::Exception& e) {
         std::cerr << "OpenCV error: " << e.what() << std::endl;
         std::cerr << "Please check the path relative to the pwd" << std::endl;
-
-        // Handle the error
-        // ...
         return -1;
     }
 
-    std::vector<cv::Mat> detections;     // Process the image.
-    detections = pre_process(frame, net);
-    cv::Mat frame_cloned = frame.clone();
-    std::vector<cv::Rect> boxes_NMS;
-    std::vector<std::string> labels_NMS;
-    
-    cv::Mat img = post_process(frame_cloned, detections, class_list, boxes_NMS, labels_NMS);
-    for (int i = 0; i < boxes_NMS.size(); i++)
-    {
-        // Draw bounding box.
-        cv::rectangle(img, cv::Point(boxes_NMS[i].x, boxes_NMS[i].y), cv::Point(boxes_NMS[i].x + boxes_NMS[i].width, boxes_NMS[i].y + boxes_NMS[i].height), BLUE, 3*THICKNESS);
-        // Draw class labels.
-        draw_label(img, labels_NMS[i], boxes_NMS[i].x, boxes_NMS[i].y);
-        std::cout << "x: " <<  boxes_NMS[i].x << std::endl;
-        std::cout << "y: " <<  boxes_NMS[i].y << std::endl;
-        std::cout << "width: " <<  boxes_NMS[i].width << std::endl;
-        std::cout << "height: " <<  boxes_NMS[i].height << std::endl;
-        std::cout << "Frame size: " << frame.size << std::endl;
-        std::cout << "y range " << boxes_NMS[i].y + boxes_NMS[i].height << std::endl;
-        std::cout << "x range " << boxes_NMS[i].x + boxes_NMS[i].width << std::endl;
+    int key_pressed; // Stores the key pressed by the user when the function is running
 
-
-
-        // cv::Mat plate_img = frame(cv::Range(100 , 150), cv::Range(200,300));
+    while (true) {
+        // std::cout << "####################### REACHED START OF WHILE LOOP #######################" << std::endl;
+        // std::cout << "Frame before input from camera = " << std::endl << " " << frame << std::endl << std::endl;
+        // std::cout << "Getting data from camera" << std::endl;
         
-        // Feed the bounding box information to tesseract to do OCR
-        cv::Rect roi(boxes_NMS[i].x, boxes_NMS[i].y, boxes_NMS[i].width, boxes_NMS[i].height);
-        cv::Mat plate_img = frame(roi);
-        cv::imshow("plate img", plate_img);
-        // cv::waitKey(0);
-        std::cout << "Performing OCR" << std::endl;
-        std::string ocr_text;
+        // Read video file as source frame if source == 1
+        if( source == 1){
+            bool isSuccess = capdev->read(frame);
+
+            // If video file has ended playing, play it again (i.e. in loop)
+            if (isSuccess == false){
+                std::cout << "Video file has ended. Running the video in loop" << std::endl;
+                capdev->set(1,0); // Read the video file from beginning | https://docs.opencv.org/4.x/d4/d15/group__videoio__flags__base.html#ggaeb8dd9c89c10a5c63c139bf7c4f5704da6223452891755166a4fd5173ea257068
+                capdev->read(frame); //Src: https://stackoverflow.com/questions/17158602/playback-loop-option-in-opencv-videos
+            }
+        }else if( source == 2){
+            // std::cout << "Getting data from camera" << std::endl;
+            *capdev >> frame; //frame.type() is 16 viz. 8UC3
+        }
+
+        // Resize the image to make computation easier
+        // cv::resize(frame, frame, cv::Size(res_width, res_height));
+        // See the original frame
+        cv::imshow(window_original_image, frame);
+
+
+        // Perform object detection using YOLOv5 pre-trained model
+        detect_objects(frame, nc_1, class_list_1, net_1, lane_detected);
+
+        // Perform license plate detection and OCR using custom trained model
+        detect_objects(lane_detected, nc_2, class_list_2, net_2, lane_detected);
         
-        cv::Mat test_img = cv::imread("ma.png");
-        cv::Size img_size = test_img.size();
+        // Perform lane segmentation using classical CV
+        lane_detection(lane_detected, lane_detected);
 
-        // Print image width and height
-        std::cout << "Image width: " << img_size.width << std::endl;
-        std::cout << "Image height: " << img_size.height << std::endl;
+        // Show the original image with lanes and detected objects
+        cv::imshow(window_lanes_detected, lane_detected);
 
-        cv::Mat gray;
-        cv::Size size(1656, 842);
-        ocrTOtext(plate_img,ocr_text);
-        // cv::imshow("Original Image", img);
-        // cv::imshow("Processed Image", thresh);
-        std::cout << "Detected text is: " << ocr_text << std::endl;
+        if(source == 0){
+            // If source frame is image, don't run the processing again and again. So, wait indefinitely for user's input
+            key_pressed = cv::waitKey(0);
+        }else{
+            key_pressed = cv::waitKey(1000/fps); // It will play video at its original fps
+        }
+        
+        if(key_pressed == 'q'){ //Search for the function's output if no key is pressed within the given time           
+            //Wait indefinitely until 'q' is pressed. 113 is q's ASCII value  
+            std::cout << "q is pressed. Exiting the program" << std::endl;
+            cv::destroyWindow("1: Original_Image"); //destroy the created window
+            return 0;
+        }
     }
-
-    
-    
-    // Put efficiency information.
-    // The function getPerfProfile returns the overall time for     inference(t) and the timings for each of the layers(in layersTimes).
-    std::vector<double> layersTimes;
-    double freq = cv::getTickFrequency() / 1000;
-    double t = net.getPerfProfile(layersTimes) / freq;
-    std::string label = cv::format("Inference time : %.2f ms", t);
-    // std::string label = "Inference time";
-    cv::putText(img, label, cv::Point(20, 40), FONT_FACE, FONT_SCALE, RED);
-    cv::imshow("Output", img);
-    cv::waitKey(0);
-    return 0;
+ 
+return 0;
 }

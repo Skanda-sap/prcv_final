@@ -354,9 +354,6 @@ CMakeFiles/prcv_final_project.dir/src/helper_functions.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
  /usr/include/linux/close_range.h \
  /home/dev/Documents/prcv_final/include/helper_functions.h \
- /home/dev/Documents/prcv_final/include/filter.h /usr/include/dirent.h \
- /usr/include/x86_64-linux-gnu/bits/dirent.h \
- /usr/include/x86_64-linux-gnu/bits/dirent_ext.h \
  /usr/include/tesseract/baseapi.h /usr/include/tesseract/apitypes.h \
  /usr/include/tesseract/publictypes.h \
  /usr/include/tesseract/pageiterator.h /usr/include/tesseract/platform.h \
