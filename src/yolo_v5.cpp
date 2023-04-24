@@ -92,6 +92,10 @@ int main(int argc, char** argv)
             // You can replace 5 with CAP_PROP_FPS as well, they are enumerations
             fps = capdev->get(5);
             std::cout << "Frames per second in video:" << fps << std::endl;
+
+            cv::Size refS( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
+                    (int) capdev->get(cv::CAP_PROP_FRAME_HEIGHT));
+            printf("Image size(WidthxHeight) from file: %dx%d\n", refS.width, refS.height);
         
             // Obtain frame_count using opencv built in frame count reading method
             // You can replace 7 with CAP_PROP_FRAME_COUNT as well, they are enumerations
