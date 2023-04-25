@@ -52,3 +52,5 @@ Push the changes to Github:
 git push origin main
 
 If any error persists, please reach out to Google ! 
+
+This helped: https://stackoverflow.com/questions/16329776/how-to-keep-a-branch-synchronized-updated-with-master
