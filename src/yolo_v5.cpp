@@ -238,7 +238,7 @@ int main(int argc, char** argv)
             return 0;
         }
 
-        if (key_pressed == 52){//Let the user save the video with special effect when 4 is pressed
+        if (key_pressed == 52){//Let the user save the original video when 4 is pressed
             save_video = 1;
             std::cout << "Saving original video!" << std::endl;
         }
