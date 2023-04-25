@@ -78,7 +78,7 @@ int main(int argc, char** argv)
     cv::namedWindow(window_lanes_detected);
     window_id++;
 
-    
+    cv::Size refS;
     // Decide if input source is image or video file by calculating total number of frames in input
     if(source == 0){
         // Check if the input is image or video file by counting the number of frames in the input
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
             fps = capdev->get(5);
             std::cout << "Frames per second in video:" << fps << std::endl;
 
-            cv::Size refS( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
+            refS = cv::Size( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
                     (int) capdev->get(cv::CAP_PROP_FRAME_HEIGHT));
             printf("Image size(WidthxHeight) from file: %dx%d\n", refS.width, refS.height);
         
@@ -125,6 +125,7 @@ int main(int argc, char** argv)
         }
     }
 
+    
     // Source is live video
     if (source == 2){
         capdev = new cv::VideoCapture(camera_ID);
@@ -136,7 +137,7 @@ int main(int argc, char** argv)
         fps = capdev->get(5);
         std::cout << "Input feed is camera" << std::endl;
         // get some properties of the image
-        cv::Size refS( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
+        refS = cv::Size( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
                     (int) capdev->get(cv::CAP_PROP_FRAME_HEIGHT));
         printf("Image size(WidthxHeight) from camera: %dx%d\n", refS.width, refS.height);
     }
@@ -180,8 +181,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    int key_pressed; // Stores the key pressed by the user when the function is running
+    cv::VideoWriter video_original("saved_video_original.avi",cv::VideoWriter::fourcc('M','J','P','G'),10, cv::Size(refS.width,refS.height));
 
+    int key_pressed; // Stores the key pressed by the user when the function is running
+    int save_video = 0;
     while (true) {
         // std::cout << "####################### REACHED START OF WHILE LOOP #######################" << std::endl;
         // std::cout << "Frame before input from camera = " << std::endl << " " << frame << std::endl << std::endl;
@@ -231,7 +234,17 @@ int main(int argc, char** argv)
             //Wait indefinitely until 'q' is pressed. 113 is q's ASCII value  
             std::cout << "q is pressed. Exiting the program" << std::endl;
             cv::destroyWindow("1: Original_Image"); //destroy the created window
+            video_original.release();
             return 0;
+        }
+
+        if (key_pressed == 52){//Let the user save the video with special effect when 4 is pressed
+            save_video = 1;
+            std::cout << "Saving original video!" << std::endl;
+        }
+
+        if (save_video == 1){
+            video_original.write(frame);
         }
     }
  

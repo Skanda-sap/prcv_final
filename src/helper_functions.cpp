@@ -636,11 +636,23 @@ int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, 
         
         // Feed the bounding box information to tesseract to do OCR
         int buffer = 0;
-        std::cout << "Starting ROI calculation" << std::endl;
-        std::cout << "x: " << boxes_NMS[i].x << " | y: " << boxes_NMS[i].y << " | width: " << boxes_NMS[i].width << " | height: " << boxes_NMS[i].height << std::endl;
+        // std::cout << "Starting ROI calculation" << std::endl;
+        // std::cout << "x: " << boxes_NMS[i].x << " | y: " << boxes_NMS[i].y << " | width: " << boxes_NMS[i].width << " | height: " << boxes_NMS[i].height << std::endl;
 
         int x_max = boxes_NMS[i].x + boxes_NMS[i].width;
         int y_max = boxes_NMS[i].y + boxes_NMS[i].height;
+
+        int x_min = boxes_NMS[i].x;
+        int y_min = boxes_NMS[i].y;
+
+        if (x_min < 0){
+            x_min = 0;
+        }
+
+        if (y_min < 0){
+            y_min = 0;
+        }
+
         if (boxes_NMS[i].x + boxes_NMS[i].width >= src.cols){
             x_max = src.cols - 1;
         }
@@ -648,9 +660,9 @@ int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, 
             y_max = src.rows - 1;
         }
 
-        cv::Rect roi(boxes_NMS[i].x, boxes_NMS[i].y, x_max - boxes_NMS[i].x , y_max - boxes_NMS[i].y);
+        cv::Rect roi(x_min, y_min, x_max - boxes_NMS[i].x , y_max - boxes_NMS[i].y);
         cv::Mat plate_img = src(roi);
-        std::cout << "Calculated ROI" << std::endl;
+        // std::cout << "Calculated ROI" << std::endl;
         // cv::imshow("plate img", plate_img);
         
         if (nc == 1){
