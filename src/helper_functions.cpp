@@ -173,21 +173,72 @@ cv::Mat post_process(cv::Mat &input_image, int &nc, std::vector<cv::Mat> &output
 
 // Perform Optical Character Recognition (OCR) on the provided image (src) and store the result in outText
 int ocrTOtext(cv::Mat& src, std::string& outText){
+    // Convert input image to grayscale
+    cv::Mat grayscale_image;
+    cv::cvtColor(src, grayscale_image, cv::COLOR_BGR2GRAY);
+
+    // Threshold the grayscale image using Otsu's method
+    cv::Mat thresholded_image;
+    cv::threshold(grayscale_image, thresholded_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+    // Find contours of each connected component in the thresholded image
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(thresholded_image, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    // Sort contours from left to right
+    std::sort(contours.begin(), contours.end(), [](const std::vector<cv::Point>& contour1, const std::vector<cv::Point>& contour2) {
+        return cv::boundingRect(contour1).x < cv::boundingRect(contour2).x;
+    });
+
+    // Concatenate recognized characters to form the number plate
+    std::string number_plate;
+    for (const auto& contour : contours) {
+        cv::Rect bounding_box = cv::boundingRect(contour);
+
+        // Extract the character from the bounding box
+        cv::Mat character_image = grayscale_image(bounding_box);
+        cv::rectangle(character_image, bounding_box, cv::Scalar(0), 1);
+        cv::imshow("char images",character_image);
+        // Use Tesseract OCR to recognize the character
+        tesseract::TessBaseAPI ocr;
+        ocr.Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
+        ocr.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+        ocr.SetImage(character_image.data, character_image.cols, character_image.rows, 1, character_image.step);
+        std::string recognized_text = ocr.GetUTF8Text();
+                // Draw the contours around the character
+        std::vector<std::vector<cv::Point>> contour_list = { contour };
+        cv::drawContours(character_image, contour_list, -1, cv::Scalar(0, 255, 0), 2);
+        // std::cout<< " recog char: "<< recognized_text<< std::endl;
+        // Append the recognized character to the number plate
+        outText += recognized_text;
+    }
+
+    // Display the input image with bounding boxes around each character
+    cv::Mat input_image_with_boxes = src.clone();
+    for (const auto& contour : contours) {
+        cv::Rect bounding_box = cv::boundingRect(contour);
+        // cv::rectangle(input_image_with_boxes, bounding_box, cv::Scalar(0, 255, 0), 2);
+    }
+    cv::imshow("Input Image with Bounding Boxes", input_image_with_boxes);
+
+    // Display the final number plate
+    std::cout << "Number Plate: " << outText << std::endl;
+    number_plate = outText;
     // // Combine the edge and thresholded images
-    tesseract::TessBaseAPI *ocr = new tesseract::TessBaseAPI();
-    //This line initializes the Tesseract OCR engine with the English language and LSTM OCR engine mode.
-    ocr->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
-    //This line sets the page segmentation mode of the Tesseract OCR engine to automatic.
-    ocr->SetPageSegMode(tesseract::PSM_SINGLE_LINE);
-    //It uses the SetImage() function of the TessBaseAPI class and passes the image data, width, height, number of channels, and step size of the image.
-    ocr->SetImage(src.data, src.cols, src.rows, 3, src.step);
-    ocr->SetSourceResolution(70);
-    // ocr->SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
-    //runs the OCR on the image using the GetUTF8Text() function of the TessBaseAPI class and assigns the recognized text to the outText string variable.
-    outText = std::string(ocr->GetUTF8Text());
-    // std::cout <<"detected: "<< outText;
-    // cv:: imshow("src", src);
-    ocr->End();
+    // tesseract::TessBaseAPI *ocr = new tesseract::TessBaseAPI();
+    // //This line initializes the Tesseract OCR engine with the English language and LSTM OCR engine mode.
+    // ocr->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
+    // //This line sets the page segmentation mode of the Tesseract OCR engine to automatic.
+    // ocr->SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+    // //It uses the SetImage() function of the TessBaseAPI class and passes the image data, width, height, number of channels, and step size of the image.
+    // ocr->SetImage(src.data, src.cols, src.rows, 3, src.step);
+    // ocr->SetSourceResolution(70);
+    // // ocr->SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+    // //runs the OCR on the image using the GetUTF8Text() function of the TessBaseAPI class and assigns the recognized text to the outText string variable.
+    // outText = std::string(ocr->GetUTF8Text());
+    // // std::cout <<"detected: "<< outText;
+    // // cv:: imshow("src", src);
+    // ocr->End();
     return(0);
 }
 
@@ -554,11 +605,32 @@ int lane_detection(cv::Mat &src, cv::Mat &dst){
     // cv::imshow("cannyVideo", cannyedgeVideo);        
 // fill poly --> masking
         // createMask(mask, cannyedgeVideo, width, height);
-    cv::Mat mask = createMask(cannyedgeVideo, width, height);
+    // cv::Mat mask = createMask(cannyedgeVideo, width, height);
+    // Read the sixth frame from the video
+    cv::Mat frame, sixth_frame;
+    // for (int i = 0; i < 6; i++) {
+    //     cap.read(src);
+    // }
+    sixth_frame =src.clone();
+
+    // Display the sixth frame and wait for the user to select the ROI
+    cv::imshow("Select ROI", sixth_frame);
+    std::vector<cv::Point> vertices;
+    cv::setMouseCallback("Select ROI", selectROI, &sixth_frame);
+    
+    
+    while (vertices.size() < 4) {
+        cv::waitKey(1);
+    }
+
+    // Create the mask region that corresponds to the ROI
+    cv::Mat mask = createMask(sixth_frame, vertices);
+
     // cv::imshow("mask", mask);
     // std::cout << "Width of mask: " << mask.cols << ", Height of mask: " << mask.rows << std::endl;
     // cv::Mat cropped_edges = mask.clone();
     cv::Mat cropped_edges = cv::Mat::zeros(mask.size(), mask.type());
+    
     cv::bitwise_and(grayVideo, mask, cropped_edges);
     // cv::imshow("crop edge Video", cropped_edges);
 
@@ -792,4 +864,37 @@ int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, 
     cv::putText(dst, label, cv::Point(20, 40), FONT_FACE, FONT_SCALE, RED);
 
     return 0;
+}
+
+cv::Mat createMask(cv::Mat &myImage, std::vector<cv::Point>& vertices) {
+    cv::Mat mask = cv::Mat::zeros(myImage.size(), myImage.type());
+    const cv::Point* ppt[1] = { &vertices[0] };
+    int npt[] = { static_cast<int>(vertices.size()) };
+    cv::fillPoly(mask, ppt, npt, 1, cv::Scalar(255,255,255));
+    return mask;
+}
+
+// Callback function for mouse events
+void selectROI(int event, int x, int y, int flags, void* userdata,std::vector<cv::Point>& vertices, cv::Mat &mask) {
+    cv::Mat frame = *((cv::Mat*)userdata);
+
+    if (event == cv::EVENT_LBUTTONDOWN) {
+        vertices.push_back(cv::Point(x, y));
+        circle(frame, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
+
+        if (vertices.size() > 1) {
+            std::vector<std::vector<cv::Point>> pts{ vertices };
+            mask = createMask(frame, vertices);
+            // cout << "Updated mask:\n" << mask << endl; // print the updated mask
+        }
+
+        imshow("Select ROI", frame);
+        } else if (event == cv::EVENT_RBUTTONDOWN) {
+            // if (vertices.size() > 0) {
+            //     savePointsToFile(vertices, "home/skanda/Documents/prcv_final/input/roi_points.txt");
+            // }
+            vertices.clear();
+            mask = cv::Mat::zeros(frame.size(), CV_8UC1);
+            imshow("Select ROI", frame);
+        }
 }

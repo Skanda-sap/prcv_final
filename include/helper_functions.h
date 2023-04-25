@@ -83,4 +83,7 @@ std::pair<int, int> get_floating_center(cv::Mat &frame, std::vector<cv::Vec4i> l
 // add_text function
 cv::Mat add_text(cv::Mat frame, int image_center, int left_x_base, int right_x_base);
 
+cv::Mat createMask(const cv::Mat &myImage, const std::vector<cv::Point>& vertices);
+void selectROI(int event, int x, int y, int flags, void* userdata);
+
 #endif
