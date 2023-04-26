@@ -185,6 +185,8 @@ int main(int argc, char** argv)
 
     int key_pressed; // Stores the key pressed by the user when the function is running
     int save_video = 0;
+    int select_polygon = 1;
+    cv::Mat mask;
     while (true) {
         // std::cout << "####################### REACHED START OF WHILE LOOP #######################" << std::endl;
         // std::cout << "Frame before input from camera = " << std::endl << " " << frame << std::endl << std::endl;
@@ -193,6 +195,7 @@ int main(int argc, char** argv)
         // Read video file as source frame if source == 1
         if( source == 1){
             bool isSuccess = capdev->read(frame);
+
 
             // If video file has ended playing, play it again (i.e. in loop)
             if (isSuccess == false){
@@ -209,8 +212,10 @@ int main(int argc, char** argv)
         // cv::resize(frame, frame, cv::Size(res_width, res_height));
         // See the original frame
         cv::imshow(window_original_image, frame);
+        
+            // std::cout << "Ended show of window_original_image function" << std::endl;
 
-
+        
         // Perform object detection using YOLOv5 pre-trained model
         detect_objects(frame, nc_1, class_list_1, net_1, lane_detected);
 
@@ -218,10 +223,45 @@ int main(int argc, char** argv)
         detect_objects(lane_detected, nc_2, class_list_2, net_2, lane_detected);
         
         // Perform lane segmentation using classical CV
-        lane_detection(lane_detected, lane_detected);
+        
+        
+        // Ask user to select the polygon only once
+        
+        if (select_polygon == 1){
+            struct MouseCallbackData{
+                cv::Mat frame;
+                std::vector<cv::Point> vertices;
+                };
+        
+            std::vector<cv::Point> vertices;
+            MouseCallbackData data{frame, vertices}; // Initializing the structure
+
+            // Display the sixth frame and wait for the user to select the ROI
+            cv::namedWindow("Select ROI");
+            
+            std::cout << "Started mouse callback function" << std::endl;
+            cv::imshow("Select ROI", data.frame);
+            cv::setMouseCallback("Select ROI", selectROI, &data);
+            // cv::waitKey(0);
+            std::cout << "Ended mouse callback function" << std::endl;
+            
+            while (data.vertices.size() < 4) {
+                cv::waitKey(1);
+            }
+        
+            std::cout << "Vertices size is: " << data.vertices.size() << std::endl;
+            // Create the mask region that corresponds to the ROI
+            // cv::Mat mask = data->mask;
+            vertices = data.vertices;
+            mask = createMask(frame, vertices);
+            select_polygon = 0;
+        }
+        
+        lane_detection(lane_detected, lane_detected, mask);
+        std::cout<<"Lane detected passed"<<std::endl;
 
         // Show the original image with lanes and detected objects
-        cv::imshow(window_lanes_detected, lane_detected);
+        // cv::imshow(window_lanes_detected, lane_detected);
 
         if(source == 0){
             // If source frame is image, don't run the processing again and again. So, wait indefinitely for user's input
@@ -238,7 +278,7 @@ int main(int argc, char** argv)
             return 0;
         }
 
-        if (key_pressed == 52){//Let the user save the video with special effect when 4 is pressed
+        if (key_pressed == 52){//Let the user save the original video when 4 is pressed
             save_video = 1;
             std::cout << "Saving original video!" << std::endl;
         }

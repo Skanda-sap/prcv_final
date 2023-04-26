@@ -173,21 +173,72 @@ cv::Mat post_process(cv::Mat &input_image, int &nc, std::vector<cv::Mat> &output
 
 // Perform Optical Character Recognition (OCR) on the provided image (src) and store the result in outText
 int ocrTOtext(cv::Mat& src, std::string& outText){
+    // Convert input image to grayscale
+    cv::Mat grayscale_image;
+    cv::cvtColor(src, grayscale_image, cv::COLOR_BGR2GRAY);
+
+    // Threshold the grayscale image using Otsu's method
+    cv::Mat thresholded_image;
+    cv::threshold(grayscale_image, thresholded_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+    // Find contours of each connected component in the thresholded image
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(thresholded_image, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    // Sort contours from left to right
+    std::sort(contours.begin(), contours.end(), [](const std::vector<cv::Point>& contour1, const std::vector<cv::Point>& contour2) {
+        return cv::boundingRect(contour1).x < cv::boundingRect(contour2).x;
+    });
+
+    // Concatenate recognized characters to form the number plate
+    std::string number_plate;
+    for (const auto& contour : contours) {
+        cv::Rect bounding_box = cv::boundingRect(contour);
+
+        // Extract the character from the bounding box
+        cv::Mat character_image = grayscale_image(bounding_box);
+        cv::rectangle(character_image, bounding_box, cv::Scalar(0), 1);
+        cv::imshow("char images",character_image);
+        // Use Tesseract OCR to recognize the character
+        tesseract::TessBaseAPI ocr;
+        ocr.Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
+        ocr.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+        ocr.SetImage(character_image.data, character_image.cols, character_image.rows, 1, character_image.step);
+        std::string recognized_text = ocr.GetUTF8Text();
+                // Draw the contours around the character
+        std::vector<std::vector<cv::Point>> contour_list = { contour };
+        cv::drawContours(character_image, contour_list, -1, cv::Scalar(0, 255, 0), 2);
+        // std::cout<< " recog char: "<< recognized_text<< std::endl;
+        // Append the recognized character to the number plate
+        outText += recognized_text;
+    }
+
+    // Display the input image with bounding boxes around each character
+    cv::Mat input_image_with_boxes = src.clone();
+    for (const auto& contour : contours) {
+        cv::Rect bounding_box = cv::boundingRect(contour);
+        // cv::rectangle(input_image_with_boxes, bounding_box, cv::Scalar(0, 255, 0), 2);
+    }
+    cv::imshow("Input Image with Bounding Boxes", input_image_with_boxes);
+
+    // Display the final number plate
+    std::cout << "Number Plate: " << outText << std::endl;
+    number_plate = outText;
     // // Combine the edge and thresholded images
-    tesseract::TessBaseAPI *ocr = new tesseract::TessBaseAPI();
-    //This line initializes the Tesseract OCR engine with the English language and LSTM OCR engine mode.
-    ocr->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
-    //This line sets the page segmentation mode of the Tesseract OCR engine to automatic.
-    ocr->SetPageSegMode(tesseract::PSM_SINGLE_LINE);
-    //It uses the SetImage() function of the TessBaseAPI class and passes the image data, width, height, number of channels, and step size of the image.
-    ocr->SetImage(src.data, src.cols, src.rows, 3, src.step);
-    ocr->SetSourceResolution(70);
-    // ocr->SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
-    //runs the OCR on the image using the GetUTF8Text() function of the TessBaseAPI class and assigns the recognized text to the outText string variable.
-    outText = std::string(ocr->GetUTF8Text());
-    // std::cout <<"detected: "<< outText;
-    // cv:: imshow("src", src);
-    ocr->End();
+    // tesseract::TessBaseAPI *ocr = new tesseract::TessBaseAPI();
+    // //This line initializes the Tesseract OCR engine with the English language and LSTM OCR engine mode.
+    // ocr->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
+    // //This line sets the page segmentation mode of the Tesseract OCR engine to automatic.
+    // ocr->SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+    // //It uses the SetImage() function of the TessBaseAPI class and passes the image data, width, height, number of channels, and step size of the image.
+    // ocr->SetImage(src.data, src.cols, src.rows, 3, src.step);
+    // ocr->SetSourceResolution(70);
+    // // ocr->SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+    // //runs the OCR on the image using the GetUTF8Text() function of the TessBaseAPI class and assigns the recognized text to the outText string variable.
+    // outText = std::string(ocr->GetUTF8Text());
+    // // std::cout <<"detected: "<< outText;
+    // // cv:: imshow("src", src);
+    // ocr->End();
     return(0);
 }
 
@@ -313,21 +364,6 @@ cv::Mat applyCanny(cv::Mat &input, int lowThreshold, int ratio, int kernel_size)
     cv::Mat output;
     cv::Canny(input, output, lowThreshold, lowThreshold * ratio, kernel_size);
     return output;
-}
-
-
-cv::Mat createMask(const cv::Mat &myImage, float width, float height)
-{
-    cv::Mat mask = cv::Mat::zeros(myImage.size(), myImage.type());
-    cv::Point pts[1][4];
-    pts[0][0] = cv::Point(width * 0.30, height);
-    pts[0][1] = cv::Point(width * 0.46, height * 0.72);
-    pts[0][2] = cv::Point(width * 0.58, height * 0.72);
-    pts[0][3] = cv::Point(width * 0.82, height);
-    const cv::Point* ppt[1] = { pts[0] };
-    int npt[] = { 4 };
-    cv::fillPoly(mask, ppt, npt, 1, cv::Scalar(255,255,255));
-    return mask;
 }
 
 
@@ -534,7 +570,7 @@ cv::Mat add_text(cv::Mat frame, int image_center, int left_x_base, int right_x_b
 }
 
 // Detects lane using classical CV
-int lane_detection(cv::Mat &src, cv::Mat &dst){
+int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
     
     cv::Mat grayVideo;
     cv::Mat cannyedgeVideo;
@@ -554,25 +590,52 @@ int lane_detection(cv::Mat &src, cv::Mat &dst){
     // cv::imshow("cannyVideo", cannyedgeVideo);        
 // fill poly --> masking
         // createMask(mask, cannyedgeVideo, width, height);
-    cv::Mat mask = createMask(cannyedgeVideo, width, height);
+    // cv::Mat mask = createMask(cannyedgeVideo, width, height);
+    // Read the sixth frame from the video
+    cv::Mat frame, sixth_frame;
+    // for (int i = 0; i < 6; i++) {
+    //     cap.read(src);
+    // }
+    sixth_frame =src.clone();
+
+    
+    
+    cv::imshow("Mask", mask);
+
+
     // cv::imshow("mask", mask);
     // std::cout << "Width of mask: " << mask.cols << ", Height of mask: " << mask.rows << std::endl;
     // cv::Mat cropped_edges = mask.clone();
-    cv::Mat cropped_edges = cv::Mat::zeros(mask.size(), mask.type());
+
+    cv::Mat cropped_edges = cv::Mat::zeros(mask.size(), mask.type()); //It should be single channel
+    
+    std::cout << "Mask channels: " << mask.channels() << std::endl; 
+    std::cout << "cropped_edges channels: " << cropped_edges.channels() << std::endl; 
+    std::cout << "grayVideo channels: " << grayVideo.channels() << std::endl; 
+
+
+
     cv::bitwise_and(grayVideo, mask, cropped_edges);
-    // cv::imshow("crop edge Video", cropped_edges);
+    std::cout << "Created bitwise_and" << std::endl;
+
+
+    cv::imshow("crop edge Video", cropped_edges);
+    // cv::waitKey(0);
 
     cv::Mat canny_masked = cv::Mat::zeros(mask.size(), mask.type());
     cv::bitwise_and(cannyedgeVideo, mask, canny_masked);
+    std::cout << "Created cannyedgeVideo" << std::endl;
     // cv::imshow("canny masked Video", canny_masked);
 
     warpPerspective(cannyedgeVideo);
+    std::cout << "Created warpPerspective" << std::endl;
     // cv::imshow("after warp cannyVideo", cannyedgeVideo);        
 
     cv::Mat warped_image = src.clone();  // Make a copy of the input image
 
     warpPerspective(warped_image);  // Warp the image
     // cv::imshow("warped_image", cropped_edges);  // Show the warped image
+    std::cout << "Created warped_image" << std::endl;
 
     // cv::Mat warped_image_gray;
     // cv::cvtColor(cannyedgeVideo, warped_image_gray, cv::COLOR_BGR2GRAY);
@@ -593,15 +656,23 @@ int lane_detection(cv::Mat &src, cv::Mat &dst){
     }
     // std::cout<<"line segment completed"<<std::endl;
     // cv::imshow("Hough",src);
+        std::cout << "Created histogram" << std::endl;
+
 
             // cv::imshow("detected_lines", warped_image_gray); // display the image with the detected
         std::vector<cv::Vec4i> optimized_lines = optimize_lines(cannyedgeVideo, line_segments);
+        std::cout << "Created optimized_lines" << std::endl;
+
         // std::vector<cv::Vec4i> optimized_lines = optimize_lines(src, line_segments);
         cv::Mat outputFrame = display_lines(src, optimized_lines);
+        std::cout << "Created display_lines" << std::endl;
+
         std::pair<int, int> shifting_points = get_floating_center(outputFrame, optimized_lines);
         int imageCenter = outputFrame.cols / 2;
         dst = add_text(outputFrame, shifting_points.first, left_x_base, right_x_base);
-        // cv::imshow("Frame with Text", frameWithText);
+        cv::imshow("Frame with Text", dst);
+        std::cout << "Created add_text" << std::endl;
+
     return 0;
 }
 
@@ -792,4 +863,53 @@ int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, 
     cv::putText(dst, label, cv::Point(20, 40), FONT_FACE, FONT_SCALE, RED);
 
     return 0;
+}
+
+cv::Mat createMask(cv::Mat &myImage, std::vector<cv::Point>& vertices) {
+    cv::Mat mask = cv::Mat::zeros(myImage.size(), CV_8UC1);
+    const cv::Point* ppt[1] = { &vertices[0] };
+    int npt[] = { static_cast<int>(vertices.size()) };
+    cv::fillPoly(mask, ppt, npt, 1, cv::Scalar(255));
+    return mask;
+}
+
+// Callback function for mouse events
+void selectROI(int event, int x, int y, int flags, void* userdata) {
+    
+    // std::cout << "Entered select ROI" << std::endl;
+    struct myMouseCallbackData{
+        cv::Mat frame;
+        std::vector<cv::Point> vertices;
+    };
+    // cv::Mat frame = *((cv::Mat*)userdata);
+    
+    myMouseCallbackData* data = (myMouseCallbackData*)(userdata);
+
+    // std::cout << "Reached before while" << std::endl;
+    
+    // while (data->vertices.size() < 4){
+        if (event == cv::EVENT_LBUTTONDOWN) {
+            data->vertices.push_back(cv::Point(x, y));
+            cv::circle(data->frame, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
+
+            cv::imshow("Select ROI", data->frame);
+        } else if (event == cv::EVENT_RBUTTONDOWN) {
+            // if (vertices.size() > 0) {
+            //     savePointsToFile(vertices, "home/skanda/Documents/prcv_final/input/roi_points.txt");
+            // }
+            data->vertices.clear();
+            // cv::imshow("Select ROI", data->frame);
+        }
+    // }
+
+    // std::cout << "Reached after while" << std::endl;
+
+    // if (data->vertices.size() == 4) {
+    //         // std::vector<cv::Point> pts{ data->vertices };
+    //         data->mask = createMask(data->frame, data->vertices);
+    //         // cout << "Updated mask:\n" << mask << endl; // print the updated mask
+    // }
+
+    // std::cout << "Mask calculated" << std::endl;
+    
 }
