@@ -367,21 +367,6 @@ cv::Mat applyCanny(cv::Mat &input, int lowThreshold, int ratio, int kernel_size)
 }
 
 
-cv::Mat createMask(const cv::Mat &myImage, float width, float height)
-{
-    cv::Mat mask = cv::Mat::zeros(myImage.size(), myImage.type());
-    cv::Point pts[1][4];
-    pts[0][0] = cv::Point(width * 0.30, height);
-    pts[0][1] = cv::Point(width * 0.46, height * 0.72);
-    pts[0][2] = cv::Point(width * 0.58, height * 0.72);
-    pts[0][3] = cv::Point(width * 0.82, height);
-    const cv::Point* ppt[1] = { pts[0] };
-    int npt[] = { 4 };
-    cv::fillPoly(mask, ppt, npt, 1, cv::Scalar(255,255,255));
-    return mask;
-}
-
-
 void warpPerspective(cv::Mat& frame) {
     int height = frame.rows;
     int width = frame.cols;
@@ -585,7 +570,7 @@ cv::Mat add_text(cv::Mat frame, int image_center, int left_x_base, int right_x_b
 }
 
 // Detects lane using classical CV
-int lane_detection(cv::Mat &src, cv::Mat &dst){
+int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
     
     cv::Mat grayVideo;
     cv::Mat cannyedgeVideo;
@@ -613,32 +598,37 @@ int lane_detection(cv::Mat &src, cv::Mat &dst){
     // }
     sixth_frame =src.clone();
 
-    // Display the sixth frame and wait for the user to select the ROI
-    cv::imshow("Select ROI", sixth_frame);
-    std::vector<cv::Point> vertices;
-    cv::setMouseCallback("Select ROI", selectROI, &sixth_frame);
     
     
-    while (vertices.size() < 4) {
-        cv::waitKey(1);
-    }
+    cv::imshow("Mask", mask);
 
-    // Create the mask region that corresponds to the ROI
-    cv::Mat mask = createMask(sixth_frame, vertices);
 
     // cv::imshow("mask", mask);
     // std::cout << "Width of mask: " << mask.cols << ", Height of mask: " << mask.rows << std::endl;
     // cv::Mat cropped_edges = mask.clone();
-    cv::Mat cropped_edges = cv::Mat::zeros(mask.size(), mask.type());
+
+    cv::Mat cropped_edges = cv::Mat::zeros(mask.size(), mask.type()); //It should be single channel
     
+    std::cout << "Mask channels: " << mask.channels() << std::endl; 
+    std::cout << "cropped_edges channels: " << cropped_edges.channels() << std::endl; 
+    std::cout << "grayVideo channels: " << grayVideo.channels() << std::endl; 
+
+
+
     cv::bitwise_and(grayVideo, mask, cropped_edges);
-    // cv::imshow("crop edge Video", cropped_edges);
+    std::cout << "Created bitwise_and" << std::endl;
+
+
+    cv::imshow("crop edge Video", cropped_edges);
+    // cv::waitKey(0);
 
     cv::Mat canny_masked = cv::Mat::zeros(mask.size(), mask.type());
     cv::bitwise_and(cannyedgeVideo, mask, canny_masked);
+    std::cout << "Created cannyedgeVideo" << std::endl;
     // cv::imshow("canny masked Video", canny_masked);
 
     warpPerspective(cannyedgeVideo);
+    std::cout << "Created warpPerspective" << std::endl;
     // cv::imshow("after warp cannyVideo", cannyedgeVideo);        
 
     cv::Mat warped_image = src.clone();  // Make a copy of the input image
@@ -867,34 +857,50 @@ int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, 
 }
 
 cv::Mat createMask(cv::Mat &myImage, std::vector<cv::Point>& vertices) {
-    cv::Mat mask = cv::Mat::zeros(myImage.size(), myImage.type());
+    cv::Mat mask = cv::Mat::zeros(myImage.size(), CV_8UC1);
     const cv::Point* ppt[1] = { &vertices[0] };
     int npt[] = { static_cast<int>(vertices.size()) };
-    cv::fillPoly(mask, ppt, npt, 1, cv::Scalar(255,255,255));
+    cv::fillPoly(mask, ppt, npt, 1, cv::Scalar(255));
     return mask;
 }
 
 // Callback function for mouse events
-void selectROI(int event, int x, int y, int flags, void* userdata,std::vector<cv::Point>& vertices, cv::Mat &mask) {
-    cv::Mat frame = *((cv::Mat*)userdata);
+void selectROI(int event, int x, int y, int flags, void* userdata) {
+    
+    // std::cout << "Entered select ROI" << std::endl;
+    struct myMouseCallbackData{
+        cv::Mat frame;
+        std::vector<cv::Point> vertices;
+    };
+    // cv::Mat frame = *((cv::Mat*)userdata);
+    
+    myMouseCallbackData* data = (myMouseCallbackData*)(userdata);
 
-    if (event == cv::EVENT_LBUTTONDOWN) {
-        vertices.push_back(cv::Point(x, y));
-        circle(frame, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
+    // std::cout << "Reached before while" << std::endl;
+    
+    // while (data->vertices.size() < 4){
+        if (event == cv::EVENT_LBUTTONDOWN) {
+            data->vertices.push_back(cv::Point(x, y));
+            cv::circle(data->frame, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
 
-        if (vertices.size() > 1) {
-            std::vector<std::vector<cv::Point>> pts{ vertices };
-            mask = createMask(frame, vertices);
-            // cout << "Updated mask:\n" << mask << endl; // print the updated mask
-        }
-
-        imshow("Select ROI", frame);
+            cv::imshow("Select ROI", data->frame);
         } else if (event == cv::EVENT_RBUTTONDOWN) {
             // if (vertices.size() > 0) {
             //     savePointsToFile(vertices, "home/skanda/Documents/prcv_final/input/roi_points.txt");
             // }
-            vertices.clear();
-            mask = cv::Mat::zeros(frame.size(), CV_8UC1);
-            imshow("Select ROI", frame);
+            data->vertices.clear();
+            // cv::imshow("Select ROI", data->frame);
         }
+    // }
+
+    // std::cout << "Reached after while" << std::endl;
+
+    // if (data->vertices.size() == 4) {
+    //         // std::vector<cv::Point> pts{ data->vertices };
+    //         data->mask = createMask(data->frame, data->vertices);
+    //         // cout << "Updated mask:\n" << mask << endl; // print the updated mask
+    // }
+
+    // std::cout << "Mask calculated" << std::endl;
+    
 }

@@ -48,7 +48,7 @@ void illuminationCorrection(cv::Mat& image);
 
 int calc_histogram3D(cv::Mat &src);
 
-int lane_detection(cv::Mat &src, cv::Mat &dst);
+int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask);
 
 int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, cv::dnn::Net &net, cv::Mat &dst);
 
@@ -83,7 +83,8 @@ std::pair<int, int> get_floating_center(cv::Mat &frame, std::vector<cv::Vec4i> l
 // add_text function
 cv::Mat add_text(cv::Mat frame, int image_center, int left_x_base, int right_x_base);
 
-cv::Mat createMask(const cv::Mat &myImage, const std::vector<cv::Point>& vertices);
+cv::Mat createMask(cv::Mat &myImage, std::vector<cv::Point>& vertices);
+
 void selectROI(int event, int x, int y, int flags, void* userdata);
 
 #endif
