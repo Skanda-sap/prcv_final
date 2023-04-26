@@ -565,7 +565,7 @@ cv::Mat add_text(cv::Mat frame, int image_center, int left_x_base, int right_x_b
     } else if (deviation >= 40 && deviation <= 150) {
         text = "Straight";
     }
-    cv::putText(frame, "DIRECTION: " + text, cv::Point(50, 50), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
+    // cv::putText(frame, "DIRECTION: " + text, cv::Point(50, 50), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
     return frame;
 }
 
@@ -860,7 +860,11 @@ int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, 
     double t = net.getPerfProfile(layersTimes) / freq;
     std::string label = cv::format("Inference time : %.2f ms", t);
     // std::string label = "Inference time";
-    cv::putText(dst, label, cv::Point(20, 40), FONT_FACE, FONT_SCALE, RED);
+    if (nc == 80){
+        cv::putText(dst, label, cv::Point(20, 40), FONT_FACE, FONT_SCALE, RED);
+    }else{
+        cv::putText(dst, label, cv::Point(20, 80), FONT_FACE, FONT_SCALE, RED);
+    }
 
     return 0;
 }
