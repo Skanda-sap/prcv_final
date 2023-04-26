@@ -635,6 +635,7 @@ int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
 
     warpPerspective(warped_image);  // Warp the image
     // cv::imshow("warped_image", cropped_edges);  // Show the warped image
+    std::cout << "Created warped_image" << std::endl;
 
     // cv::Mat warped_image_gray;
     // cv::cvtColor(cannyedgeVideo, warped_image_gray, cv::COLOR_BGR2GRAY);
@@ -655,15 +656,23 @@ int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
     }
     // std::cout<<"line segment completed"<<std::endl;
     // cv::imshow("Hough",src);
+        std::cout << "Created histogram" << std::endl;
+
 
             // cv::imshow("detected_lines", warped_image_gray); // display the image with the detected
         std::vector<cv::Vec4i> optimized_lines = optimize_lines(cannyedgeVideo, line_segments);
+        std::cout << "Created optimized_lines" << std::endl;
+
         // std::vector<cv::Vec4i> optimized_lines = optimize_lines(src, line_segments);
         cv::Mat outputFrame = display_lines(src, optimized_lines);
+        std::cout << "Created display_lines" << std::endl;
+
         std::pair<int, int> shifting_points = get_floating_center(outputFrame, optimized_lines);
         int imageCenter = outputFrame.cols / 2;
         dst = add_text(outputFrame, shifting_points.first, left_x_base, right_x_base);
-        // cv::imshow("Frame with Text", frameWithText);
+        cv::imshow("Frame with Text", dst);
+        std::cout << "Created add_text" << std::endl;
+
     return 0;
 }
 
