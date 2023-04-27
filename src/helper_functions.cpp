@@ -346,13 +346,14 @@ int calc_histogram3D(cv::Mat &src){
 }
 
 // SKANDA HELPER FUNCTIONS
-
+// Fucntion definition for Gaussian Blur takes input frame - denoises the input and return the output 
 cv::Mat applyGaussianBlur(cv::Mat &input) {
     cv::Mat output;
     cv::GaussianBlur(input, output, cv::Size(3, 3), 0, 0);
     return output;
 }
 
+// Fucntion definition for converting to grayscale it takes input frame - converts it to grayscale and returns the output
 cv::Mat convertToGrayscale(cv::Mat &input) {
     cv::Mat output;
     cv::cvtColor(input, output, cv::COLOR_BGR2GRAY);
@@ -360,6 +361,7 @@ cv::Mat convertToGrayscale(cv::Mat &input) {
 }
 
 
+// Fucntion definition for Canny Edge Detection it takes input frame, threshold, ration and kernel size - and returns the canny edge output matrix
 cv::Mat applyCanny(cv::Mat &input, int lowThreshold, int ratio, int kernel_size) {
     cv::Mat output;
     cv::Canny(input, output, lowThreshold, lowThreshold * ratio, kernel_size);
@@ -367,6 +369,7 @@ cv::Mat applyCanny(cv::Mat &input, int lowThreshold, int ratio, int kernel_size)
 }
 
 
+// Fucntion definition for WarPerspectvive it takes input frame perfromes warp with points defined and return the output after perspective transformation
 void warpPerspective(cv::Mat& frame) {
     int height = frame.rows;
     int width = frame.cols;
@@ -388,6 +391,7 @@ void warpPerspective(cv::Mat& frame) {
     cv::warpPerspective(frame, frame, M, frame.size());
 }
 
+// Fucntion definition for Histogram it takes input frame and computes the Left_x_base and right_x_base from the frame provided
 std::pair<int, int> histogram(cv::Mat &frame) {
     // Build histogram
     cv::Mat histogram = frame.clone();
@@ -416,6 +420,7 @@ std::pair<int, int> histogram(cv::Mat &frame) {
     return { left_x_base, right_x_base };
 }
 
+// Fucntion definition for line detection it takes input frame and uses hough transform to detect the line segments on the road and return the line segment
 std::vector<cv::Vec4i> detect_lines(cv::Mat frame) {
     // Find lines on the smaller frame using Hough Lines Polar
     std::vector<cv::Vec4i> line_segments;
@@ -424,6 +429,7 @@ std::vector<cv::Vec4i> detect_lines(cv::Mat frame) {
 }
 
 
+// Fucntion definition for map coordinates it takes input frame and pair of paramters of type double - it find the four vertices and returns them
 std::vector<cv::Vec4i> map_coordinates(cv::Mat &frame, std::pair<double, double> parameters) {
     int height = frame.rows;
     int width = frame.cols;
@@ -445,6 +451,7 @@ std::vector<cv::Vec4i> map_coordinates(cv::Mat &frame, std::pair<double, double>
     return coords;
 }
 
+// Fucntion definition for Convert_lines it takes input lines - denoises the input and return the output after perfroming push back
 std::vector<cv::Vec4i> convert_lines(const std::vector<std::vector<int>>& lines) {
     std::vector<cv::Vec4i> converted_lines;
     for (const auto& line : lines) {
@@ -453,6 +460,8 @@ std::vector<cv::Vec4i> convert_lines(const std::vector<std::vector<int>>& lines)
     }
     return converted_lines;
 }
+
+// Fucntion definition for line optimization it takes input frame and vector of lines, calculates slope and intercept of the lines and returns the lane lines
 std::vector<cv::Vec4i> optimize_lines(cv::Mat &frame, std::vector<cv::Vec4i> lines) {
     int height = frame.rows;
     int width = frame.cols;
@@ -508,6 +517,7 @@ std::vector<cv::Vec4i> optimize_lines(cv::Mat &frame, std::vector<cv::Vec4i> lin
     return lane_lines;
 }
 
+// Fucntion definition for Line dsplay it takes input frame and lines as vector 4i format and it masks the line with original input frame
 cv::Mat display_lines(cv::Mat& frame, std::vector<cv::Vec4i>& lines) { 
     // Create a mask with zeros using the same dimension as frame.
     cv::Mat mask(frame.size(), CV_8UC3, cv::Scalar(0)); 
@@ -523,6 +533,9 @@ cv::Mat display_lines(cv::Mat& frame, std::vector<cv::Vec4i>& lines) {
         cv::addWeighted(frame, 0.8, mask, 1, 1, result);
         return result;
 }
+
+
+// Fucntion definition for obtaining the floating center of lines and returns the upper mid value and lower mid values
 std::pair<int, int> get_floating_center(cv::Mat &frame, std::vector<cv::Vec4i> lane_lines) {
     int height = frame.rows;
     int width = frame.cols;
@@ -549,6 +562,7 @@ std::pair<int, int> get_floating_center(cv::Mat &frame, std::vector<cv::Vec4i> l
     }
 }
 
+// Fucntion definition for adding text to the on the input frame
 cv::Mat add_text(cv::Mat frame, int image_center, int left_x_base, int right_x_base) {
     // std::cout<<" lef base : "<<left_x_base<<std::endl;
     // std::cout<<" rigt base : "<<right_x_base<<std::endl;
@@ -584,12 +598,12 @@ int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
     // cv::imshow("Gaussian blur video", blur_video);
     // grayscale of denoised frame
     grayVideo = convertToGrayscale(blur_video);
-        // cv::imshow("gray_scale_after_blur", grayVideo);
-// canny edge detection
+    // cv::imshow("gray_scale_after_blur", grayVideo);
+     // canny edge detection
     cannyedgeVideo = applyCanny(grayVideo, 50, 3, 3);
     // cv::imshow("cannyVideo", cannyedgeVideo);        
-// fill poly --> masking
-        // createMask(mask, cannyedgeVideo, width, height);
+    // fill poly --> masking
+    // createMask(mask, cannyedgeVideo, width, height);
     // cv::Mat mask = createMask(cannyedgeVideo, width, height);
     // Read the sixth frame from the video
     cv::Mat frame, sixth_frame;
@@ -597,12 +611,7 @@ int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
     //     cap.read(src);
     // }
     sixth_frame =src.clone();
-
-    
-    
     cv::imshow("Mask", mask);
-
-
     // cv::imshow("mask", mask);
     // std::cout << "Width of mask: " << mask.cols << ", Height of mask: " << mask.rows << std::endl;
     // cv::Mat cropped_edges = mask.clone();
@@ -614,11 +623,9 @@ int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
     std::cout << "grayVideo channels: " << grayVideo.channels() << std::endl; 
 
 
-
+// bitwise and operation on grayvideo and masking 
     cv::bitwise_and(grayVideo, mask, cropped_edges);
     std::cout << "Created bitwise_and" << std::endl;
-
-
     cv::imshow("crop edge Video", cropped_edges);
     // cv::waitKey(0);
 
@@ -659,7 +666,7 @@ int lane_detection(cv::Mat &src, cv::Mat &dst, cv::Mat &mask){
         std::cout << "Created histogram" << std::endl;
 
 
-            // cv::imshow("detected_lines", warped_image_gray); // display the image with the detected
+        // cv::imshow("detected_lines", warped_image_gray); // display the image with the detected
         std::vector<cv::Vec4i> optimized_lines = optimize_lines(cannyedgeVideo, line_segments);
         std::cout << "Created optimized_lines" << std::endl;
 
