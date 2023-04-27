@@ -876,6 +876,7 @@ int detect_objects(cv::Mat &src, int &nc, std::vector<std::string> &class_list, 
     return 0;
 }
 
+// Creates mask using vertices
 cv::Mat createMask(cv::Mat &myImage, std::vector<cv::Point>& vertices) {
     cv::Mat mask = cv::Mat::zeros(myImage.size(), CV_8UC1);
     const cv::Point* ppt[1] = { &vertices[0] };
