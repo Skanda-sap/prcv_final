@@ -82,9 +82,9 @@ cv::Mat display_lines(cv::Mat& frame, std::vector<cv::Vec4i>& lines);
 std::pair<int, int> get_floating_center(cv::Mat &frame, std::vector<cv::Vec4i> lane_lines);
 // add_text function
 cv::Mat add_text(cv::Mat frame, int image_center, int left_x_base, int right_x_base);
-
+// Create mask function
 cv::Mat createMask(cv::Mat &myImage, std::vector<cv::Point>& vertices);
-
+// Region of intererst extraction function
 void selectROI(int event, int x, int y, int flags, void* userdata);
 
 #endif
