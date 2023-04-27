@@ -1,6 +1,6 @@
-/*Dev Vaibhav
+/*Dev Vaibhav, Siddharth Maheshwari, Skanda Akkihebbal Prasanna
 Spring 2023 CS 5330
-Project 4: Calibration and Augmented Reality
+Final Project: Autonomous Lane and Number plate detection using classic Computer Vision and Deep Learning 
 */
 
 #ifndef helper_functions
